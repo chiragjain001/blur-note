@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benaam Baatein - Share Anonymously</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-card: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --accent: #8b5cf6;
+            --accent-hover: #7c3aed;
+            --success: #10b981;
+            --error: #ef4444;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-card: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --border: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* ===== LANDING PAGE ===== */
+        .landing-page {
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.3;
+        }
+
+        .gradient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .orb-1 {
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            top: -200px;
+            left: -200px;
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+            bottom: -150px;
+            right: -150px;
+            animation-delay: 5s;
+        }
+
+        .orb-3 {
+            width: 350px;
+            height: 350px;
+            background: linear-gradient(135deg, #ec4899, #f59e0b);
+            top: 50%;
+            right: 10%;
+            animation-delay: 10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(50px, 50px) rotate(90deg); }
+            50% { transform: translate(0, 100px) rotate(180deg); }
+            75% { transform: translate(-50px, 50px) rotate(270deg); }
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1.5rem 2rem;
+            backdrop-filter: blur(20px);
+            background: rgba(10, 10, 10, 0.5);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .theme-toggle {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.05);
+            border-color: var(--accent);
+        }
+
+        /* Hero Section */
+        .hero {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 0 2rem;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2));
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        .hero h1 {
+            font-size: 4.5rem;
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+            background: linear-gradient(135deg, #ffffff, #a0a0a0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            line-height: 1.6;
+        }
+
+        .cta-button {
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            color: white;
+            border: none;
+            padding: 1.2rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 50px rgba(139, 92, 246, 0.4);
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .cta-button:hover::before {
+            left: 100%;
+        }
+
+        /* Features Section */
+        .features {
+            position: relative;
+            z-index: 1;
+            padding: 6rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent);
+            box-shadow: 0 20px 40px rgba(139, 92, 246, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+            animation: bounce 2s infinite;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* ===== MAIN APP ===== */
+        .main-app {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .icon-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.3rem;
+        }
+
+        .icon-btn:hover {
+            transform: scale(1.1);
+            border-color: var(--accent);
+        }
+
+        .user-profile-btn {
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .user-profile-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3);
+        }
+
+        /* Feed Container */
+        .feed-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 6rem 1rem 2rem;
+        }
+
+        /* Post Card */
+        .post-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .post-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .post-header {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .post-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .post-author {
+            flex: 1;
+        }
+
+        .post-name {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .post-time {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .post-content {
+            padding: 0 1.5rem 1.5rem;
+        }
+
+        .post-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        /* Audio Player */
+        .audio-player {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1));
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .play-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .play-btn:hover {
+            transform: scale(1.1);
+            background: var(--accent-hover);
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-secondary);
+            border-radius: 3px;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.1s;
+        }
+
+        .time-display {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            min-width: 80px;
+        }
+
+        /* Post Actions */
+        .post-actions {
+            display: flex;
+            justify-content: space-around;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.3s;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+        }
+
+        .action-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .action-btn.liked {
+            color: #ef4444;
+        }
+
+        /* Create Post Button */
+        .create-post-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            box-shadow: 0 20px 40px rgba(139, 92, 246, 0.4);
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .create-post-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            color: var(--text-primary);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .record-btn {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: #ef4444;
+            border: none;
+            color: white;
+            font-size: 3rem;
+            cursor: pointer;
+            margin: 2rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .record-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .record-btn.recording {
+            animation: recordPulse 1.5s infinite;
+        }
+
+        @keyframes recordPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            50% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
+        }
+
+        .voice-filters {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .voice-filter {
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .voice-filter:hover {
+            border-color: var(--accent);
+            transform: translateY(-5px);
+        }
+
+        .voice-filter.selected {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2));
+            border-color: var(--accent);
+        }
+
+        .filter-emoji {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: all 0.3s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            z-index: 3000;
+            display: none;
+            animation: slideUpToast 0.3s;
+        }
+
+        .toast.show {
+            display: block;
+        }
+
+        @keyframes slideUpToast {
+            from {
+                opacity: 0;
+                transform: translate(-50%, 20px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .voice-filters {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .create-post-btn {
+                bottom: 1rem;
+                right: 1rem;
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .empty-state-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+        }
+
+        /* Login Modal */
+        .login-options {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 2rem;
+        }
+
+        .google-login-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .google-login-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body data-theme="dark">
+    <!-- Landing Page -->
+    <div class="landing-page" id="landingPage">
+        <!-- Animated Background -->
+        <div class="bg-animation">
+            <div class="gradient-orb orb-1"></div>
+            <div class="gradient-orb orb-2"></div>
+            <div class="gradient-orb orb-3"></div>
+        </div>
+
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="nav-content">
+                <div class="logo">
+                    <span>👻</span>
+                    <span>Benaam Baatein</span>
+                </div>
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <span id="themeIcon">🌙</span>
+                    <span id="themeText">Dark</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <div class="hero-badge">✨ Your Safe Space to Share</div>
+                <h1>Share Your Voice,<br>Stay Anonymous</h1>
+                <p class="hero-subtitle">Express feelings, confessions, and stories through voice or text - completely private and secure</p>
+                <button class="cta-button" onclick="enterApp()">
+                    🚀 Start Sharing
+                </button>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">🎤</span>
+                    <h3>Voice Posts with AI</h3>
+                    <p>Record voice notes and transform your voice with AI filters for complete anonymity</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">✍️</span>
+                    <h3>Text Stories</h3>
+                    <p>Share your thoughts, confessions, and experiences through beautifully designed text posts</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">🔒</span>
+                    <h3>100% Private</h3>
+                    <p>Your identity stays protected. Browse without logging in, post anonymously when ready</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">💬</span>
+                    <h3>Connect & React</h3>
+                    <p>Like and comment on posts that resonate with you. Build connections without revealing identity</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">🌓</span>
+                    <h3>Beautiful Design</h3>
+                    <p>Modern, responsive interface with dark/light modes for the perfect viewing experience</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">⚡</span>
+                    <h3>Instant Sharing</h3>
+                    <p>Quick Google sign-in only when posting. Start browsing immediately without any barriers</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Main App -->
+    <div class="main-app" id="mainApp">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo">
+                    <span>👻</span>
+                    <span>Benaam Baatein</span>
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <span id="appThemeIcon">🌙</span>
+                    </button>
+                    <button class="icon-btn" onclick="showProfile()">
+                        <span>👤</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Feed -->
+        <div class="feed-container" id="feedContainer">
+            <!-- Loading State -->
+            <div class="spinner" id="loadingSpinner"></div>
+            
+            <!-- Posts will be dynamically added here -->
+        </div>
+
+        <!-- Create Post Button -->
+        <button class="create-post-btn" onclick="showCreateModal()">
+            <span>+</span>
+        </button>
+    </div>
+
+    <!-- Create Post Modal -->
+    <div class="modal" id="createModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Create Post</h2>
+                <button class="close-btn" onclick="closeModal('createModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('voice')">🎤 Voice</div>
+                    <div class="tab" onclick="switchTab('text')">✍️ Text</div>
+                </div>
+
+                <!-- Voice Tab -->
+                <div class="tab-content active" id="voiceTab">
+                    <div style="text-align: center;">
+                        <button class="record-btn" id="recordBtn" onclick="toggleRecording()">
+                            <span id="recordIcon">🎤</span>
+                        </button>
+                        <p id="recordTime" style="color: var(--text-secondary); margin-bottom: 2rem;">00:00</p>
+                    </div>
+
+                    <h4 style="margin-bottom: 1rem;">Choose Voice Filter:</h4>
+                    <div class="voice-filters" id="voiceFilters">
+                        <div class="voice-filter selected" data-filter="original">
+                            <span class="filter-emoji">👤</span>
+                            <div>Original</div>
+                        </div>
+                        <div class="voice-filter" data-filter="deep">
+                            <span class="filter-emoji">🎭</span>
+                            <div>Deep</div>
+                        </div>
+                        <div class="voice-filter" data-filter="robot">
+                            <span class="filter-emoji">🤖</span>
+                            <div>Robot</div>
+                        </div>
+                        <div class="voice-filter" data-filter="echo">
+                            <span class="filter-emoji">🌌</span>
+                            <div>Echo</div>
+                        </div>
+                        <div class="voice-filter" data-filter="whisper">
+                            <span class="filter-emoji">👻</span>
+                            <div>Whisper</div>
+                        </div>
+                        <div class="voice-filter" data-filter="chipmunk">
+                            <span class="filter-emoji">🐿️</span>
+                            <div>Chipmunk</div>
+                        </div>
+                    </div>
+
+                    <textarea id="voiceCaption" placeholder="Add a caption to your voice post (optional)..." rows="3"></textarea>
+                    <button class="submit-btn" onclick="postVoice()">Post Voice 🎤</button>
+                </div>
+
+                <!-- Text Tab -->
+                <div class="tab-content" id="textTab">
+                    <textarea id="textContent" placeholder="Share your thoughts, feelings, or story..." rows="8"></textarea>
+                    <button class="submit-btn" onclick="postText()">Post Text ✍️</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Sign in to Post</h2>
+                <button class="close-btn" onclick="closeModal('loginModal')">&times;</button>
+            </div>
+            <div class="login-options">
+                <button class="google-login-btn" onclick="handleGoogleLogin()">
+                    <svg width="24" height="24" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    <span>Continue with Google</span>
+                </button>
+                <p style="text-align: center; color: var(--text-secondary); font-size: 0.9rem;">
+                    Quick sign-in to start posting. Your identity stays protected.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="modal" id="profileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Your Profile</h2>
+                <button class="close-btn" onclick="closeModal('profileModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="profileContent">
+                <!-- Profile content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Global State
+        let isRecording = false;
+        let recordingTime = 0;
+        let recordingInterval = null;
+        let selectedVoiceFilter = 'original';
+        let currentUser = null;
+        let posts = [];
+
+        // Sample Data
+        const samplePosts = [
+            {
+                id: 1,
+                type: 'text',
+                content: 'Sometimes I feel like nobody really understands what I\'m going through. But sharing here makes me feel less alone. Thank you all for being here. 💜',
+                author: 'Anonymous Soul',
+                time: '2h ago',
+                likes: 234,
+                comments: 45,
+                isLiked: false
+            },
+            {
+                id: 2,
+                type: 'voice',
+                content: 'Just wanted to share something that\'s been on my mind...',
+                author: 'Midnight Whisper',
+                time: '5h ago',
+                duration: '2:34',
+                voiceFilter: 'Echo',
+                likes: 567,
+                comments: 89,
+                isLiked: false
+            },
+            {
+                id: 3,
+                type: 'text',
+                content: 'To anyone reading this at 3am: you\'re not alone. We\'re all fighting battles nobody knows about. Keep going, you\'re stronger than you think. ✨',
+                author: 'Hope Keeper',
+                time: '1d ago',
+                likes: 892,
+                comments: 156,
+                isLiked: false
+            }
+        ];
+
+        // Initialize App
+        function enterApp() {
+            document.getElementById('landingPage').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            loadFeed();
+        }
+
+        // Theme Toggle
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            body.setAttribute('data-theme', newTheme);
+            
+            const icons = document.querySelectorAll('[id*="themeIcon"]');
+            const texts = document.querySelectorAll('[id*="themeText"]');
+            
+            icons.forEach(icon => {
+                icon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
+            });
+            
+            texts.forEach(text => {
+                text.textContent = newTheme === 'dark' ? 'Dark' : 'Light';
+            });
+            
+            showToast(`Switched to ${newTheme} mode`);
+        }
+
+        // Load Feed
+        function loadFeed() {
+            const container = document.getElementById('feedContainer');
+            const spinner = document.getElementById('loadingSpinner');
+            
+            setTimeout(() => {
+                spinner.style.display = 'none';
+                
+                if (samplePosts.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">👻</div>
+                            <p class="empty-state-text">No posts yet. Be the first to share!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = '';
+                samplePosts.forEach(post => {
+                    container.appendChild(createPostCard(post));
+                });
+            }, 1000);
+        }
+
+        // Create Post Card
+        function createPostCard(post) {
+            const card = document.createElement('div');
+            card.className = 'post-card';
+            
+            const likeIcon = post.isLiked ? '❤️' : '🤍';
+            const likeClass = post.isLiked ? 'liked' : '';
+            
+            card.innerHTML = `
+                <div class="post-header">
+                    <div class="post-avatar">👻</div>
+                    <div class="post-author">
+                        <div class="post-name">${post.author}</div>
+                        <div class="post-time">${post.time}</div>
+                    </div>
+                </div>
+                <div class="post-content">
+                    <div class="post-text">${post.content}</div>
+                    ${post.type === 'voice' ? createAudioPlayer(post) : ''}
+                </div>
+                <div class="post-actions">
+                    <button class="action-btn ${likeClass}" onclick="toggleLike(${post.id})">
+                        <span id="like-${post.id}">${likeIcon}</span>
+                        <span id="likes-${post.id}">${post.likes}</span>
+                    </button>
+                    <button class="action-btn" onclick="showComments(${post.id})">
+                        <span>💬</span>
+                        <span>${post.comments}</span>
+                    </button>
+                    <button class="action-btn">
+                        <span>🔖</span>
+                    </button>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Create Audio Player
+        function createAudioPlayer(post) {
+            return `
+                <div class="audio-player">
+                    <div class="audio-controls">
+                        <button class="play-btn" onclick="playAudio(${post.id})">
+                            <span id="play-${post.id}">▶️</span>
+                        </button>
+                        <div class="progress-bar" onclick="seekAudio(${post.id}, event)">
+                            <div class="progress-fill" id="progress-${post.id}"></div>
+                        </div>
+                        <div class="time-display">
+                            <span id="time-${post.id}">0:00</span> / ${post.duration}
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+                        🎭 Voice Filter: ${post.voiceFilter}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Toggle Like
+        function toggleLike(postId) {
+            const post = samplePosts.find(p => p.id === postId);
+            if (!post) return;
+            
+            post.isLiked = !post.isLiked;
+            post.likes += post.isLiked ? 1 : -1;
+            
+            const likeBtn = document.getElementById(`like-${postId}`);
+            const likesCount = document.getElementById(`likes-${postId}`);
+            
+            likeBtn.textContent = post.isLiked ? '❤️' : '🤍';
+            likesCount.textContent = post.likes;
+            likeBtn.parentElement.classList.toggle('liked');
+            
+            showToast(post.isLiked ? 'Post liked! ❤️' : 'Like removed');
+        }
+
+        // Show Comments
+        function showComments(postId) {
+            showToast('Comments feature coming soon! 💬');
+        }
+
+        // Show Create Modal
+        function showCreateModal() {
+            if (!currentUser) {
+                document.getElementById('loginModal').classList.add('show');
+                return;
+            }
+            document.getElementById('createModal').classList.add('show');
+        }
+
+        // Close Modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+
+        // Switch Tab
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        // Voice Filter Selection
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.voice-filter')) {
+                document.querySelectorAll('.voice-filter').forEach(filter => {
+                    filter.classList.remove('selected');
+                });
+                e.target.closest('.voice-filter').classList.add('selected');
+                selectedVoiceFilter = e.target.closest('.voice-filter').dataset.filter;
+            }
+        });
+
+        // Toggle Recording
+        function toggleRecording() {
+            const btn = document.getElementById('recordBtn');
+            const icon = document.getElementById('recordIcon');
+            const timeDisplay = document.getElementById('recordTime');
+            
+            if (!isRecording) {
+                isRecording = true;
+                btn.classList.add('recording');
+                icon.textContent = '⏸️';
+                recordingTime = 0;
+                
+                recordingInterval = setInterval(() => {
+                    recordingTime++;
+                    const mins = Math.floor(recordingTime / 60);
+                    const secs = recordingTime % 60;
+                    timeDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                }, 1000);
+                
+                showToast('Recording started... 🎤');
+            } else {
+                isRecording = false;
+                btn.classList.remove('recording');
+                icon.textContent = '🎤';
+                clearInterval(recordingInterval);
+                showToast('Recording stopped!');
+            }
+        }
+
+        // Post Voice
+        function postVoice() {
+            if (recordingTime === 0) {
+                showToast('Please record something first!');
+                return;
+            }
+            
+            const caption = document.getElementById('voiceCaption').value;
+            const mins = Math.floor(recordingTime / 60);
+            const secs = recordingTime % 60;
+            const duration = `${mins}:${secs.toString().padStart(2, '0')}`;
+            
+            const newPost = {
+                id: samplePosts.length + 1,
+                type: 'voice',
+                content: caption || 'New voice post',
+                author: 'You',
+                time: 'Just now',
+                duration: duration,
+                voiceFilter: selectedVoiceFilter,
+                likes: 0,
+                comments: 0,
+                isLiked: false
+            };
+            
+            samplePosts.unshift(newPost);
+            loadFeed();
+            closeModal('createModal');
+            showToast('Voice post published! 🎤');
+            
+            // Reset
+            recordingTime = 0;
+            document.getElementById('recordTime').textContent = '00:00';
+            document.getElementById('voiceCaption').value = '';
+        }
+
+        // Post Text
+        function postText() {
+            const content = document.getElementById('textContent').value.trim();
+            
+            if (!content) {
+                showToast('Please write something first!');
+                return;
+            }
+            
+            const newPost = {
+                id: samplePosts.length + 1,
+                type: 'text',
+                content: content,
+                author: 'You',
+                time: 'Just now',
+                likes: 0,
+                comments: 0,
+                isLiked: false
+            };
+            
+            samplePosts.unshift(newPost);
+            loadFeed();
+            closeModal('createModal');
+            showToast('Text post published! ✍️');
+            
+            // Reset
+            document.getElementById('textContent').value = '';
+        }
+
+        // Handle Google Login
+        function handleGoogleLogin() {
+            // Simulate Google login (in production, use Firebase Auth or similar)
+            currentUser = {
+                id: 'user_' + Date.now(),
+                name: 'Anonymous User',
+                email: 'user@example.com'
+            };
+            
+            closeModal('loginModal');
+            showToast('Logged in successfully! ✨');
+            
+            // Open create modal after login
+            setTimeout(() => {
+                document.getElementById('createModal').classList.add('show');
+            }, 500);
+        }
+
+        // Show Profile
+        function showProfile() {
+            if (!currentUser) {
+                document.getElementById('loginModal').classList.add('show');
+                return;
+            }
+            
+            const profileContent = document.getElementById('profileContent');
+            const userPosts = samplePosts.filter(post => post.author === 'You');
+            
+            profileContent.innerHTML = `
+                <div style="text-align: center; padding: 2rem 0;">
+                    <div style="width: 100px; height: 100px; margin: 0 auto 1rem; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #ec4899); display: flex; align-items: center; justify-content: center; font-size: 3rem;">
+                        👻
+                    </div>
+                    <h3 style="margin-bottom: 0.5rem;">${currentUser.name}</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 2rem;">${currentUser.email}</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; padding: 2rem; background: var(--bg-secondary); border-radius: 12px;">
+                        <div>
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--accent);">${userPosts.length}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Posts</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--accent);">${userPosts.reduce((sum, p) => sum + p.likes, 0)}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Likes</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--accent);">${userPosts.reduce((sum, p) => sum + p.comments, 0)}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Comments</div>
+                        </div>
+                    </div>
+                    
+                    <h4 style="margin: 2rem 0 1rem; text-align: left;">Your Posts</h4>
+                </div>
+            `;
+            
+            if (userPosts.length === 0) {
+                profileContent.innerHTML += `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p class="empty-state-text">You haven't posted anything yet</p>
+                    </div>
+                `;
+            } else {
+                userPosts.forEach(post => {
+                    profileContent.appendChild(createPostCard(post));
+                });
+            }
+            
+            document.getElementById('profileModal').classList.add('show');
+        }
+
+        // Play Audio (Simulated)
+        function playAudio(postId) {
+            const playBtn = document.getElementById(`play-${postId}`);
+            const progressBar = document.getElementById(`progress-${postId}`);
+            const timeDisplay = document.getElementById(`time-${postId}`);
+            
+            if (playBtn.textContent === '▶️') {
+                playBtn.textContent = '⏸️';
+                showToast('Playing audio... 🎵');
+                
+                // Simulate audio progress
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 2;
+                    progressBar.style.width = progress + '%';
+                    
+                    const currentTime = Math.floor(progress / 100 * 154); // 2:34 = 154 seconds
+                    const mins = Math.floor(currentTime / 60);
+                    const secs = currentTime % 60;
+                    timeDisplay.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+                    
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        playBtn.textContent = '▶️';
+                        progressBar.style.width = '0%';
+                        timeDisplay.textContent = '0:00';
+                    }
+                }, 100);
+            } else {
+                playBtn.textContent = '▶️';
+                showToast('Audio paused');
+            }
+        }
+
+        // Seek Audio
+        function seekAudio(postId, event) {
+            const progressBar = event.currentTarget;
+            const rect = progressBar.getBoundingClientRect();
+            const percent = ((event.clientX - rect.left) / rect.width) * 100;
+            
+            document.getElementById(`progress-${postId}`).style.width = percent + '%';
+            showToast('Seeking...');
+        }
+
+        // Show Toast
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Close modal on outside click
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('show');
+            }
+        });
+
+        // Prevent modal content click from closing
+        document.querySelectorAll('.modal-content').forEach(content => {
+            content.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        });
+    </script>
+</body>
+</html>

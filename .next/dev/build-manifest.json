@@ -1,0 +1,25 @@
+{
+  "pages": {
+    "/_app": []
+  },
+  "devFiles": [],
+  "polyfillFiles": [
+    "static/chunks/2bd04_next_dist_build_polyfills_polyfill-nomodule.js"
+  ],
+  "lowPriorityFiles": [
+    "static/development/_ssgManifest.js",
+    "static/development/_buildManifest.js"
+  ],
+  "rootMainFiles": [
+    "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_c31b5726._.js",
+    "static/chunks/2bd04_next_dist_compiled_react-dom_7bb03e3d._.js",
+    "static/chunks/2bd04_next_dist_compiled_react-server-dom-turbopack_8943faf0._.js",
+    "static/chunks/2bd04_next_dist_compiled_next-devtools_index_6baffb80.js",
+    "static/chunks/2bd04_next_dist_compiled_1b069eac._.js",
+    "static/chunks/2bd04_next_dist_client_04cd4e50._.js",
+    "static/chunks/2bd04_next_dist_0edb7a41._.js",
+    "static/chunks/e8e50_@swc_helpers_cjs_19cee552._.js",
+    "static/chunks/Downloads_anonymous-social-platform_a0ff3932._.js",
+    "static/chunks/turbopack-Downloads_anonymous-social-platform_039219ce._.js"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/hp/Downloads/anonymous-social-platform/app/app/layout.tsx"],"sourcesContent":["'use client'\n\nimport { ReactNode } from 'react'\n\nexport default function AppLayout({\n  children,\n}: {\n  children: ReactNode\n}) {\n  return (\n    <div className=\"min-h-screen bg-dark-bg\">\n      {children}\n    </div>\n  )\n}\n"],"names":[],"mappings":";;;;;AAAA;;AAIe,SAAS,UAAU,EAChC,QAAQ,EAGT;IACC,qBACE,uYAAC;QAAI,WAAU;kBACZ;;;;;;AAGP"}}]
+}
