@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react'
 import { getPostComments, addComment as addCommentAction } from '@/app/actions/comments'
 import { useAuth } from '@/lib/auth-context'
+import { BottomSheet } from '@/components/ui/bottom-sheet'
+import { getDbInstance } from '@/lib/firebase'
+import { collection, query, where, orderBy, onSnapshot, Timestamp } from 'firebase/firestore'
+import { showErrorToast } from '@/lib/client-error'
 
 interface CommentsModalProps {
   postId: string
@@ -18,24 +22,46 @@ export function CommentsModal({ postId, onClose }: CommentsModalProps) {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const loadComments = async () => {
-      try {
-        if (postId.startsWith('demo-')) {
-          setComments([])
-          setLoading(false)
-          return
-        }
-
-        const postComments = await getPostComments(postId)
-        setComments(postComments)
-      } catch (err) {
-        console.error('[v0] Error loading comments:', err)
-      } finally {
-        setLoading(false)
-      }
+    if (postId.startsWith('demo-')) {
+      setComments([])
+      setLoading(false)
+      return
     }
 
-    loadComments()
+    const db = getDbInstance()
+    if (!db) {
+      setLoading(false)
+      return
+    }
+
+    // Set up real-time listener
+    const commentsRef = collection(db, 'posts', postId, 'comments')
+    const q = query(commentsRef, where('status', '==', 'active'), orderBy('createdAt', 'desc'))
+    
+    setLoading(true)
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const commentsData = snapshot.docs.map((doc) => {
+          const data = doc.data()
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt?.toDate?.() || data.createdAt,
+          }
+        })
+        setComments(commentsData)
+        setLoading(false)
+      },
+      (error) => {
+        console.error('[CommentsModal] Error listening to comments:', error)
+        // Fallback to server action
+        getPostComments(postId).then(setComments).catch(console.error)
+        setLoading(false)
+      }
+    )
+
+    return () => unsubscribe()
   }, [postId])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,23 +74,42 @@ export function CommentsModal({ postId, onClose }: CommentsModalProps) {
       return
     }
 
-    try {
-      setSubmitting(true)
-      setError('')
+    const commentText = newComment.trim()
+    
+    // Optimistic UI: Add comment immediately
+    const optimisticComment = {
+      id: `temp-${Date.now()}`,
+      userId: user.uid,
+      authorUsername: user.displayName || 'Anonymous',
+      authorAvatarUrl: user.photoURL || '',
+      content: commentText,
+      createdAt: new Date(),
+      status: 'active',
+    }
+    
+    setComments((prev) => [optimisticComment, ...prev])
+    setNewComment('')
+    setSubmitting(true)
+    setError('')
 
+    try {
       await addCommentAction({
         postId,
         userId: user.uid,
-        content: newComment.trim(),
+        content: commentText,
       })
-
-      setNewComment('')
-
-      // Reload comments
-      const updatedComments = await getPostComments(postId)
-      setComments(updatedComments)
+      
+      // Real-time listener will update the list automatically
+      // Remove optimistic comment if it's still there (should be replaced by real one)
+      setTimeout(() => {
+        setComments((prev) => prev.filter((c) => !c.id.startsWith('temp-')))
+      }, 1000)
     } catch (err: any) {
-      setError(err.message || 'Failed to post comment')
+      // Revert optimistic update
+      setComments((prev) => prev.filter((c) => c.id !== optimisticComment.id))
+      setNewComment(commentText)
+      setError(err?.message || 'Failed to post comment')
+      showErrorToast(err, 'Failed to post comment')
     } finally {
       setSubmitting(false)
     }
@@ -85,77 +130,59 @@ export function CommentsModal({ postId, onClose }: CommentsModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-dark-card border border-dark-border rounded-2xl w-full max-w-2xl max-h-screen overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-dark-border">
-          <h2 className="text-2xl font-bold">Comments</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white text-2xl transition"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Comments List */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {loading ? (
-            <div className="text-center py-8">
-              <p className="text-gray-400">Loading comments...</p>
-            </div>
-          ) : comments.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-400">No comments yet. Be the first!</p>
-            </div>
-          ) : (
-            comments.map((comment) => (
-              <div key={comment.id} className="flex gap-3 pb-4 border-b border-dark-border last:border-b-0">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex-shrink-0 flex items-center justify-center text-sm">
-                  👤
+    <BottomSheet isOpen onClose={onClose} title="Comments">
+      <div className="space-y-4">
+        {loading ? (
+          <div className="py-8 text-center text-gray-400">Loading comments...</div>
+        ) : comments.length === 0 ? (
+          <div className="py-8 text-center text-gray-400">No comments yet. Be the first!</div>
+        ) : (
+          comments.map((comment) => (
+            <div key={comment.id} className="flex gap-3">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/10 text-lg">
+                👤
+              </div>
+              <div className="flex-1">
+                <div className="rounded-3xl rounded-tl-none bg-white/10 p-3 text-sm text-white/90">
+                  <span className="block font-semibold">{comment.authorUsername || 'Anonymous'}</span>
+                  <p className="mt-1 text-white/80">{comment.content}</p>
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-sm">{comment.authorUsername || 'Anonymous'}</p>
-                    <p className="text-xs text-gray-400">{timeAgo(comment.createdAt)}</p>
-                  </div>
-                  <p className="text-sm text-gray-200 mt-1">{comment.content}</p>
+                <div className="mt-1 flex gap-3 pl-3 text-xs text-white/50">
+                  <span>{timeAgo(comment.createdAt)}</span>
+                  <button className="font-semibold text-white/60">Like</button>
+                  <button className="font-semibold text-white/60">Reply</button>
                 </div>
               </div>
-            ))
-          )}
-        </div>
-
-        {/* Comment Input */}
-        {user ? (
-          <div className="border-t border-dark-border p-6 bg-dark-secondary/50">
-            {error && (
-              <p className="text-error text-sm mb-3">{error}</p>
-            )}
-            <form onSubmit={handleSubmit} className="flex gap-3">
-              <input
-                type="text"
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Add a comment..."
-                disabled={submitting}
-                className="flex-1 bg-dark-card border border-dark-border rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-primary transition disabled:opacity-50"
-              />
-              <button
-                type="submit"
-                disabled={!newComment.trim() || submitting}
-                className="btn-primary px-6 py-2 disabled:opacity-50"
-              >
-                {submitting ? '...' : 'Post'}
-              </button>
-            </form>
-          </div>
-        ) : (
-          <div className="border-t border-dark-border p-6 bg-dark-secondary/50 text-center text-gray-400 text-sm">
-            Sign in to comment
-          </div>
+            </div>
+          ))
         )}
       </div>
-    </div>
+
+      {user ? (
+        <div className="mt-6 border-t border-white/10 pt-4">
+          {error && <p className="mb-2 text-sm text-red-400">{error}</p>}
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <input
+              type="text"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Write a supportive comment..."
+              disabled={submitting}
+              className="flex-1 rounded-2xl bg-white/5 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-pink-500 disabled:opacity-50"
+            />
+            <button
+              type="submit"
+              disabled={!newComment.trim() || submitting}
+              className="rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {submitting ? '...' : 'Post'}
+            </button>
+          </form>
+        </div>
+      ) : (
+        <div className="mt-6 text-center text-sm text-white/60">Sign in to comment</div>
+      )}
+    </BottomSheet>
   )
 }
+

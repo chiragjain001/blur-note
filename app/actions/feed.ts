@@ -1,6 +1,7 @@
 'use server'
 
 import { getAdminDb } from '@/lib/firebase-admin'
+import type { Post } from '@/types/domain'
 
 /**
  * Convert Firestore Timestamp objects to plain JavaScript values
@@ -62,16 +63,13 @@ export async function getFeedPosts(
   try {
     const db = getAdminDb()
     
-    // Get all users and identify shadowbanned ones
-    // Users without a status field or with status 'active' are considered active
-    const allUsersSnapshot = await db.collection('users').get()
+    // Get shadowbanned users only
+    const shadowbannedSnapshot = await db
+      .collection('users')
+      .where('status', '==', 'shadowbanned')
+      .get()
     const shadowbannedUserIds = new Set(
-      allUsersSnapshot.docs
-        .filter(doc => {
-          const userData = doc.data()
-          return userData.status === 'shadowbanned'
-        })
-        .map(doc => doc.id)
+      shadowbannedSnapshot.docs.map((doc) => doc.id),
     )
     
     // Build query - query all posts ordered by createdAt
@@ -88,7 +86,7 @@ export async function getFeedPosts(
       }
     }
     
-    let posts: any[] = []
+    let posts: Post[] = []
     try {
       const snapshot = await query.get()
       posts = snapshot.docs.map((doc: any) => ({
@@ -116,7 +114,7 @@ export async function getFeedPosts(
     
     // Filter out shadowbanned users, inactive posts, and apply genre filter
     const filteredPosts = posts
-      .filter((post: any) => {
+      .filter((post: Post) => {
         // Exclude posts from shadowbanned users
         if (shadowbannedUserIds.has(post.userId)) {
           return false
@@ -147,24 +145,43 @@ export async function getFeedPosts(
 
 /**
  * Get user posts (for profile page)
+ * - Queries by userId only (no composite index needed)
+ * - Filters out non-active posts in memory
+ * - Sorts by createdAt DESC in memory
  */
 export async function getUserPosts(userId: string) {
   try {
     const db = getAdminDb()
-    
-    const snapshot = await db.collection('posts')
+
+    // Simple query by owner
+    const snapshot = await db
+      .collection('posts')
       .where('userId', '==', userId)
-      .where('status', '==', 'active')
-      .orderBy('createdAt', 'desc')
       .get()
-    
-    const posts = snapshot.docs.map(doc => ({
+
+    const posts = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    }))
-    
+    })) as Post[]
+
+    // Keep only active (or legacy posts without status)
+    const activePosts = posts.filter((post: Post) => {
+      return !post.status || post.status === 'active'
+    })
+
+    // Sort newest first by createdAt
+    activePosts.sort((a: any, b: any) => {
+      const aTime =
+        (a.createdAt as any)?.toMillis?.() ??
+        ((a.createdAt as any)?._seconds ?? 0) * 1000
+      const bTime =
+        (b.createdAt as any)?.toMillis?.() ??
+        ((b.createdAt as any)?._seconds ?? 0) * 1000
+      return bTime - aTime
+    })
+
     // Serialize all posts to convert Timestamps to plain values
-    return posts.map(post => serializePostData(post))
+    return activePosts.map((post) => serializePostData(post))
   } catch (error: any) {
     console.error('[Server] Error getting user posts:', error)
     return []
@@ -196,18 +213,20 @@ export async function checkUserLiked(userId: string, postId: string): Promise<bo
 export async function getUserLikedPosts(userId: string): Promise<Set<string>> {
   try {
     const db = getAdminDb()
-    
-    // Get all posts user has liked
-    // Note: This is expensive, so we'll optimize by getting likes from user's subcollection
-    // But for now, we'll use a different approach - check likes on each post
-    
-    // Actually, we should store likes in posts/{postId}/likes/{userId}
-    // So we need to query all posts and check their likes subcollections
-    // This is not efficient, but for MVP it's acceptable
-    
-    // Better approach: Store user's likes in a separate collection or use client-side caching
-    // For now, return empty set and let client handle it
-    return new Set()
+
+    // Use user-centric likes subcollection: users/{userId}/likes/{postId}
+    const likesSnapshot = await db
+      .collection('users')
+      .doc(userId)
+      .collection('likes')
+      .get()
+
+    const likedPostIds = new Set<string>()
+    likesSnapshot.forEach((doc) => {
+      likedPostIds.add(doc.id)
+    })
+
+    return likedPostIds
   } catch (error: any) {
     console.error('[Server] Error getting user liked posts:', error)
     return new Set()

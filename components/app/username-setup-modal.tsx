@@ -41,7 +41,6 @@ export function UsernameSetupModal({ userId, onComplete }: UsernameSetupModalPro
       setError('')
 
       const result = await createUsername({
-        userId,
         username: username.trim(),
       })
 

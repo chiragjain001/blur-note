@@ -121,7 +121,7 @@ export function VoiceRecorder({ onClose, onPostCreated }: VoiceRecorderProps) {
       setIsProcessing(false)
 
       // Create post using Server Action
-      const result = await createPostWithAuth(user.uid, {
+      const result = await createPostWithAuth({
         type: 'voice',
         content: caption || null,
         genre: selectedGenre,
@@ -168,11 +168,10 @@ export function VoiceRecorder({ onClose, onPostCreated }: VoiceRecorderProps) {
               type="button"
               onClick={() => setSelectedGenre(genre)}
               disabled={loading || isRecording}
-              className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition ${
-                selectedGenre === genre
+              className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition ${selectedGenre === genre
                   ? 'bg-primary text-white ring-2 ring-primary ring-offset-2 ring-offset-dark-card'
                   : 'bg-dark-secondary text-gray-300 hover:bg-dark-card'
-              } disabled:opacity-50`}
+                } disabled:opacity-50`}
             >
               {genre}
             </button>
@@ -193,11 +192,10 @@ export function VoiceRecorder({ onClose, onPostCreated }: VoiceRecorderProps) {
                 type="button"
                 onClick={() => setSelectedModulation(mod)}
                 disabled={loading || isProcessing}
-                className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-medium capitalize transition ${
-                  selectedModulation === mod
+                className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-medium capitalize transition ${selectedModulation === mod
                     ? 'bg-accent text-white ring-2 ring-accent ring-offset-2 ring-offset-dark-card'
                     : 'bg-dark-secondary text-gray-300 hover:bg-dark-card'
-                } disabled:opacity-50`}
+                  } disabled:opacity-50`}
               >
                 {mod}
               </button>
@@ -211,11 +209,10 @@ export function VoiceRecorder({ onClose, onPostCreated }: VoiceRecorderProps) {
         <button
           onClick={isRecording ? handleStopRecording : handleStartRecording}
           disabled={loading || hasPermission === false}
-          className={`w-32 h-32 mx-auto rounded-full text-4xl font-bold transition-all flex items-center justify-center ${
-            isRecording
+          className={`w-32 h-32 mx-auto rounded-full text-4xl font-bold transition-all flex items-center justify-center ${isRecording
               ? 'bg-error scale-110 animate-pulse shadow-2xl shadow-error'
               : 'bg-gradient-to-r from-primary to-accent hover:scale-105 disabled:opacity-50'
-          }`}
+            }`}
         >
           {isRecording ? '⏸️' : '🎤'}
         </button>

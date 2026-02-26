@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { signInAnonymously } from '@/lib/auth-service'
+import { signInWithGoogle } from '@/lib/auth-service'
 
 interface LoginModalProps {
   onClose: () => void
@@ -12,13 +12,13 @@ export function LoginModal({ onClose, onLogin }: LoginModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const handleAnonymousLogin = async () => {
+  const handleGoogleLogin = async () => {
     try {
       setLoading(true)
       setError('')
-      console.log('[Auth] Starting anonymous login process...')
-      const user = await signInAnonymously()
-      console.log('[Auth] Anonymous login successful:', { uid: user?.uid })
+      console.log('[Auth] Starting Google login process...')
+      const user = await signInWithGoogle()
+      console.log('[Auth] Google login successful:', { uid: user?.uid })
       onLogin(user)
       onClose()
     } catch (err: any) {
@@ -57,7 +57,7 @@ export function LoginModal({ onClose, onLogin }: LoginModalProps) {
           )}
 
           <button
-            onClick={handleAnonymousLogin}
+            onClick={handleGoogleLogin}
             disabled={loading}
             className="w-full flex items-center justify-center gap-3 py-3 bg-gradient-to-r from-primary to-accent text-white font-bold rounded-lg hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -68,14 +68,14 @@ export function LoginModal({ onClose, onLogin }: LoginModalProps) {
               </>
             ) : (
               <>
-                <span className="text-2xl">👻</span>
-                <span>Continue Anonymously</span>
+                <span className="text-2xl">🔒</span>
+                <span>Sign in with Google</span>
               </>
             )}
           </button>
 
           <p className="text-center text-sm text-gray-400 pt-4">
-            No email, no password. Just anonymous posting. Your identity stays protected.
+            No email, no password. Just Google login. Your identity stays protected.
           </p>
         </div>
       </div>

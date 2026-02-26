@@ -1,34 +1,43 @@
 'use client'
 
 import { useEffect, useState, use } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { ArrowLeft, MoreHorizontal, FileText, Mic } from 'lucide-react'
 import { Header } from '@/components/app/header'
-import { PostCard } from '@/components/app/post-card'
-import { PostCardSkeleton } from '@/components/app/post-card-skeleton'
 import { getUser } from '@/lib/firestore-utils'
 import { getUserPosts } from '@/app/actions/feed'
+import { getUserSavedPosts } from '@/app/actions/saved'
 import { useAuth } from '@/lib/auth-context'
 import { deletePost, editPost } from '@/app/actions/posts'
 import { toast } from 'sonner'
 import { EditProfileModal } from '@/components/app/edit-profile-modal'
+import { EditPostModal } from '@/components/app/edit-post-modal'
+
+const FALLBACK_GRADIENT = 'from-blue-500 via-indigo-500 to-purple-500'
+const POST_GRADIENTS = [
+  'from-pink-500 via-red-400 to-orange-400',
+  'from-purple-600 via-indigo-500 to-blue-500',
+  'from-emerald-400 via-teal-500 to-cyan-500',
+  'from-blue-500 via-indigo-500 to-purple-500',
+  'from-rose-500 via-pink-500 to-purple-500',
+  'from-amber-400 via-orange-500 to-pink-500',
+]
 
 export default function ProfilePage({ params }: { params: Promise<{ uid: string }> }) {
   const { uid } = use(params)
-  const router = useRouter()
   const { user } = useAuth()
   const [profileUser, setProfileUser] = useState<any>(null)
   const [userPosts, setUserPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set())
   const [showEditMenu, setShowEditMenu] = useState<string | null>(null)
   const [showEditProfile, setShowEditProfile] = useState(false)
+  const [showEditPost, setShowEditPost] = useState<any | null>(null)
+  const [profileTab, setProfileTab] = useState<'posts' | 'saved'>('posts')
+  const [savedPosts, setSavedPosts] = useState<any[]>([])
+  const [savedLoading, setSavedLoading] = useState(false)
 
   useEffect(() => {
     if (!uid) {
-      setError('User ID is required')
       setLoading(false)
       return
     }
@@ -37,13 +46,13 @@ export default function ProfilePage({ params }: { params: Promise<{ uid: string 
       try {
         setLoading(true)
         const userData = await getUser(uid)
-        
+
         if (!userData) {
           throw new Error('User not found')
         }
-        
+
         setProfileUser(userData)
-        
+
         try {
           const posts = await getUserPosts(uid)
           setUserPosts(posts)
@@ -51,13 +60,11 @@ export default function ProfilePage({ params }: { params: Promise<{ uid: string 
           console.error('[v0] Error loading user posts:', postError)
           setUserPosts([])
         }
-        
-        setError(null)
-      } catch (error) {
-        console.error('[v0] Error loading profile:', error)
+
+      } catch (err) {
+        console.error('[v0] Error loading profile:', err)
         setProfileUser(null)
         setUserPosts([])
-        setError('Failed to load profile')
       } finally {
         setLoading(false)
       }
@@ -66,32 +73,73 @@ export default function ProfilePage({ params }: { params: Promise<{ uid: string 
     loadProfile()
   }, [uid])
 
-  // Add smooth scrolling behavior to html element
-  useEffect(() => {
-    document.documentElement.setAttribute('data-scroll-behavior', 'smooth')
-    return () => {
-      document.documentElement.removeAttribute('data-scroll-behavior')
-    }
-  }, [])
+  const isOwnProfile = user?.uid === uid
 
-  const handleLike = (postId: string) => {
-    const newLiked = new Set(likedPosts)
-    if (newLiked.has(postId)) {
-      newLiked.delete(postId)
-    } else {
-      newLiked.add(postId)
+  useEffect(() => {
+    const loadSaved = async () => {
+      if (!isOwnProfile || !uid) {
+        setSavedPosts([])
+        return
+      }
+      setSavedLoading(true)
+      try {
+        const saved = await getUserSavedPosts(uid)
+        setSavedPosts(saved)
+      } catch (err) {
+        console.error('[Profile] Error loading saved posts', err)
+        setSavedPosts([])
+      } finally {
+        setSavedLoading(false)
+      }
     }
-    setLikedPosts(newLiked)
-  }
+
+    loadSaved()
+  }, [uid, isOwnProfile])
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-dark-bg">
+      <div className="min-h-screen bg-[#121212] text-white">
         <Header />
-        <div className="pt-24 pb-8 px-4">
-          <div className="max-w-2xl mx-auto space-y-4">
-            <div className="h-40 bg-dark-card rounded-xl animate-pulse"></div>
-            <div className="h-96 bg-dark-card rounded-xl animate-pulse"></div>
+        <div className="flex justify-center px-4 pb-16 pt-24">
+          <div className="w-full max-w-md space-y-8">
+            {/* Banner Skeleton */}
+            <div className="relative">
+              <div className="h-48 rounded-3xl bg-white/5 animate-pulse" />
+              <div className="absolute -bottom-16 left-6">
+                <div className="rounded-full bg-[#121212] p-1">
+                  <div className="rounded-full bg-[#1E1E1E] p-1">
+                    <div className="h-24 w-24 rounded-full bg-gray-800 animate-pulse" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Profile Info Skeleton */}
+            <div className="pt-14 space-y-3">
+              <div className="h-8 w-48 bg-white/5 rounded animate-pulse" />
+              <div className="h-4 w-32 bg-white/5 rounded animate-pulse" />
+              <div className="h-4 w-full bg-white/5 rounded animate-pulse" />
+              <div className="h-4 w-3/4 bg-white/5 rounded animate-pulse" />
+            </div>
+            
+            {/* Stats Skeleton */}
+            <div className="flex rounded-3xl border border-white/10">
+              <div className="flex-1 border-r border-white/10 py-4 text-center">
+                <div className="h-6 w-12 bg-white/5 rounded mx-auto mb-2 animate-pulse" />
+                <div className="h-3 w-20 bg-white/5 rounded mx-auto animate-pulse" />
+              </div>
+              <div className="flex-1 py-4 text-center">
+                <div className="h-6 w-12 bg-white/5 rounded mx-auto mb-2 animate-pulse" />
+                <div className="h-3 w-16 bg-white/5 rounded mx-auto animate-pulse" />
+              </div>
+            </div>
+            
+            {/* Posts Skeleton */}
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 rounded-3xl bg-white/5 animate-pulse" />
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -100,12 +148,12 @@ export default function ProfilePage({ params }: { params: Promise<{ uid: string 
 
   if (!profileUser) {
     return (
-      <div className="min-h-screen bg-dark-bg">
+      <div className="min-h-screen bg-[#121212] text-white">
         <Header />
-        <div className="pt-24 pb-8 px-4 text-center">
-          <div className="text-5xl mb-4">👻</div>
-          <p className="text-gray-400 mb-6">User not found</p>
-          <Link href="/app" className="inline-block btn-primary">
+        <div className="px-4 pt-24 text-center">
+          <div className="text-5xl">👻</div>
+          <p className="mt-4 text-white/60">User not found</p>
+          <Link href="/app" className="mt-6 inline-block rounded-full bg-white/10 px-6 py-3 text-sm font-semibold text-white">
             Back to Feed
           </Link>
         </div>
@@ -113,165 +161,242 @@ export default function ProfilePage({ params }: { params: Promise<{ uid: string 
     )
   }
 
-  const isOwnProfile = user?.uid === uid
+  const coverGradient = profileUser.coverGradient || FALLBACK_GRADIENT
+  const avatar = profileUser.avatar || '👻'
+  const postCount = userPosts.length
+  const savedCount = isOwnProfile ? savedPosts.length : 0
+
+  const timeAgo = (date: any) => {
+    try {
+      const now = new Date()
+      const postDate = date?.toDate?.() || new Date(date)
+      const diff = now.getTime() - postDate.getTime()
+      const hours = Math.floor(diff / (1000 * 60 * 60))
+      if (hours < 1) return 'just now'
+      if (hours < 24) return `${hours}h ago`
+      return `${Math.floor(hours / 24)}d ago`
+    } catch {
+      return 'recently'
+    }
+  }
+
+  const currentPosts =
+    profileTab === 'posts' ? userPosts : isOwnProfile ? savedPosts : []
+
+  const currentLoading = profileTab === 'posts' ? loading : savedLoading
+
+  const renderPostRow = (post: any) => {
+    const gradient =
+      post.gradient ||
+      `bg-gradient-to-br ${POST_GRADIENTS[
+        ((post.id || '').length + (post.genre || '').length) % POST_GRADIENTS.length
+      ]}`
+    const Icon = post.type === 'voice' ? Mic : FileText
+    const content = post.content || post.text || 'Untitled post'
+
+    return (
+      <div
+        key={post.id}
+        className="relative flex items-center gap-4 rounded-3xl border border-white/5 bg-[#1C1C1F] p-4 text-white"
+      >
+        <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl ${gradient}`}>
+          <Icon size={18} className="text-white" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-white/90">{content}</p>
+          <p className="mt-1 text-xs text-white/50">
+            {timeAgo(post.createdAt)} • {post.genre || 'Thoughts'}
+          </p>
+        </div>
+        {isOwnProfile && profileTab === 'posts' && (
+          <div className="relative">
+            <button
+              onClick={() => setShowEditMenu(showEditMenu === post.id ? null : post.id)}
+              className="rounded-full bg-white/5 p-2 text-white/70 transition hover:bg-white/10"
+            >
+              <MoreHorizontal size={18} />
+            </button>
+            {showEditMenu === post.id && (
+              <div className="absolute right-0 top-full mt-2 min-w-[140px] rounded-2xl border border-white/10 bg-[#1E1E1E] text-sm shadow-lg z-10">
+                {/* Only show Edit for text posts */}
+                {post.type === 'text' && (
+                  <button
+                    onClick={() => {
+                      setShowEditMenu(null)
+                      setShowEditPost(post)
+                    }}
+                    className="block w-full px-4 py-2 text-left text-white/80 hover:bg-white/5"
+                  >
+                    Edit
+                  </button>
+                )}
+                <button
+                  onClick={async () => {
+                    if (!confirm('Delete this post?')) {
+                      setShowEditMenu(null)
+                      return
+                    }
+                    try {
+                      await deletePost(post.id)
+                      toast.success('Post deleted')
+                      if (profileTab === 'posts') {
+                        const posts = await getUserPosts(uid)
+                        setUserPosts(posts)
+                      } else {
+                        const saved = await getUserSavedPosts(uid)
+                        setSavedPosts(saved)
+                      }
+                    } catch (err: any) {
+                      toast.error(err.message || 'Failed to delete')
+                    }
+                    setShowEditMenu(null)
+                  }}
+                  className="block w-full px-4 py-2 text-left text-red-300 hover:bg-white/5"
+                >
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-dark-bg">
+    <div className="min-h-screen bg-[#121212] text-white">
       <Header />
+      <div className="flex justify-center px-4 pb-16 pt-24">
+        <div className="w-full max-w-md space-y-8">
+          <div className="relative">
+            <div className={`h-48 rounded-3xl bg-gradient-to-br ${coverGradient}`} />
+            <Link
+              href="/app"
+              className="absolute left-4 top-4 inline-flex items-center rounded-full bg-black/30 p-2 text-white"
+            >
+              <ArrowLeft size={20} />
+            </Link>
 
-      <div className="pt-24 pb-8 px-4">
-        <div className="max-w-2xl mx-auto">
-          <div className="mb-4">
-            <h1 className="text-2xl font-bold">Profile</h1>
-          </div>
-
-          {/* Profile Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="card mb-8 relative overflow-hidden shadow-2xl shadow-black/40 border border-dark-border rounded-3xl"
-          >
-            {/* Gradient Cover */}
-            <div className="h-40 bg-gradient-to-r from-primary to-accent rounded-3xl"></div>
-
-            <div className="px-6 pb-6 -mt-10">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div className="flex items-end gap-4">
-                  {/* Avatar */}
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-5xl border-[4px] border-dark-bg shadow-lg shadow-black/40">
-                    {profileUser.avatar || '👻'}
-                  </div>
-
-                  {/* Name and Handle */}
-                  <div className="space-y-1">
-                    <h2 className="text-2xl font-bold">
-                      {profileUser.username || profileUser.displayName || 'Anonymous'}
-                    </h2>
-                    <p className="text-gray-400 text-sm">
-                      @{profileUser.username?.toLowerCase() || 'anonymous'}
-                    </p>
+            <div className="absolute -bottom-16 left-6 flex items-end">
+              <div className="rounded-full bg-[#121212] p-1">
+                <div className="rounded-full bg-[#1E1E1E] p-1">
+                  <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-800 text-5xl shadow-2xl">
+                    {avatar}
                   </div>
                 </div>
-
-                {isOwnProfile && (
-                  <div className="flex items-center gap-3 sm:self-end">
-                    <button
-                      onClick={() => setShowEditProfile(true)}
-                      className="px-4 py-2 rounded-full border border-dark-border bg-dark-bg/80 text-sm font-medium transition hover:border-primary hover:shadow-[0_0_20px_rgba(129,140,248,0.35)]"
-                    >
-                      Edit Profile
-                    </button>
-                    <button
-                      className="w-9 h-9 rounded-full border border-dark-border bg-dark-bg/80 flex items-center justify-center text-lg transition hover:border-primary hover:shadow-[0_0_20px_rgba(129,140,248,0.35)]"
-                    >
-                      ···
-                    </button>
-                  </div>
-                )}
               </div>
-
-              {/* Bio */}
-              <p className="mt-4 text-gray-300 text-sm leading-relaxed">
-                {profileUser.bio || 'Anonymous soul sharing stories'}
-              </p>
             </div>
-          </motion.div>
 
-          {isOwnProfile && showEditProfile && (
-            <EditProfileModal
-              userId={user!.uid}
-              initialProfile={{
-                username: profileUser.username,
-                bio: profileUser.bio,
-                avatar: profileUser.avatar,
-              }}
-              onClose={() => setShowEditProfile(false)}
-              onUpdated={(updated) => setProfileUser(updated)}
-            />
-          )}
-
-          {/* User Posts */}
-          <div>
-            <h2 className="text-xl font-bold mb-6">Posts</h2>
-            {loading ? (
-              <div className="space-y-6">
-                {[1, 2, 3].map((i) => (
-                  <PostCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : userPosts.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-5xl mb-4 opacity-50">📝</div>
-                <p className="text-gray-400">No posts yet</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {userPosts.map((post) => (
-                  <div key={post.id} className="relative">
-                    {isOwnProfile && (
-                      <div className="absolute top-4 right-4 z-10">
-                        <button
-                          onClick={() => setShowEditMenu(showEditMenu === post.id ? null : post.id)}
-                          className="p-2 bg-dark-card/80 backdrop-blur-sm border border-dark-border rounded-lg hover:bg-dark-card transition"
-                        >
-                          •••
-                        </button>
-                        {showEditMenu === post.id && (
-                          <div className="absolute right-0 top-full mt-2 bg-dark-card border border-dark-border rounded-lg shadow-lg z-20 min-w-[120px]">
-                            <button
-                              onClick={async () => {
-                                setShowEditMenu(null)
-                                // TODO: Open edit modal
-                                toast.info('Edit functionality coming soon')
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm hover:bg-dark-secondary transition"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={async () => {
-                                if (!confirm('Are you sure you want to delete this post?')) {
-                                  setShowEditMenu(null)
-                                  return
-                                }
-                                try {
-                                  await deletePost(user!.uid, post.id)
-                                  toast.success('Deleted')
-                                  // Reload posts
-                                  const posts = await getUserPosts(uid)
-                                  setUserPosts(posts)
-                                } catch (error: any) {
-                                  toast.error(error.message || 'Failed to delete')
-                                }
-                                setShowEditMenu(null)
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm hover:bg-dark-secondary text-error transition"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    <PostCard
-                      post={post}
-                      isLiked={likedPosts.has(post.id)}
-                      onLike={() => handleLike(post.id)}
-                    />
-                  </div>
-                ))}
+            {isOwnProfile && (
+              <div className="absolute -bottom-10 right-0 flex gap-2">
+                <button
+                  onClick={() => setShowEditProfile(true)}
+                  className="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                >
+                  Edit Profile
+                </button>
+                <button className="rounded-xl border border-white/20 p-2 text-white/60">
+                  <MoreHorizontal size={18} />
+                </button>
               </div>
             )}
           </div>
 
-          {/* Back Button */}
-          <div className="mt-8 text-center">
-            <Link href="/app" className="text-primary hover:text-accent transition">
-              ← Back to Feed
+          <div className="pt-14">
+            <h2 className="text-2xl font-bold">{profileUser.username || 'Anonymous'}</h2>
+            <p className="text-sm text-white/50">@{profileUser.username?.toLowerCase() || 'anonymous'}</p>
+            <p className="mt-4 whitespace-pre-line text-sm text-white/70">
+              {profileUser.bio || 'Anonymous soul sharing stories'}
+            </p>
+          </div>
+
+          <div className="flex rounded-3xl border border-white/10">
+            <div className="flex-1 border-r border-white/10 py-4 text-center last:border-r-0">
+              <p className="text-xl font-bold text-white">{postCount}</p>
+              <p className="text-xs uppercase tracking-widest text-white/50">Total Posts</p>
+            </div>
+            <div className="flex-1 py-4 text-center">
+              <p className="text-xl font-bold text-white">{savedCount}</p>
+              <p className="text-xs uppercase tracking-widest text-white/50">Saved</p>
+            </div>
+          </div>
+
+          {/* Only show tabs if own profile */}
+          {isOwnProfile && (
+            <div className="flex rounded-2xl border border-white/10 bg-white/5">
+              <button
+                onClick={() => setProfileTab('posts')}
+                className={`flex-1 rounded-2xl py-3 text-sm font-semibold transition ${
+                  profileTab === 'posts'
+                    ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white'
+                    : 'text-white/60'
+                }`}
+              >
+                Your Posts
+              </button>
+              <button
+                onClick={() => setProfileTab('saved')}
+                className={`flex-1 rounded-2xl py-3 text-sm font-semibold transition ${
+                  profileTab === 'saved'
+                    ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white'
+                    : 'text-white/60'
+                }`}
+              >
+                Saved
+              </button>
+            </div>
+          )}
+
+          {currentLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((index) => (
+                <div key={index} className="h-16 rounded-3xl bg-white/5 animate-pulse" />
+              ))}
+            </div>
+          ) : currentPosts.length === 0 ? (
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-10 text-center text-white/60">
+              Nothing here yet.
+            </div>
+          ) : (
+            <div className="space-y-4">{currentPosts.map((post) => renderPostRow(post))}</div>
+          )}
+
+          <div className="pt-4 text-center">
+            <Link href="/app" className="text-sm text-white/60 underline">
+              Back to Feed
             </Link>
           </div>
         </div>
       </div>
+
+      {isOwnProfile && showEditProfile && (
+        <EditProfileModal
+          userId={user!.uid}
+          initialProfile={{
+            username: profileUser.username,
+            bio: profileUser.bio,
+            avatar: profileUser.avatar,
+            coverGradient: profileUser.coverGradient,
+          }}
+          onClose={() => setShowEditProfile(false)}
+          onUpdated={(updated) => setProfileUser(updated)}
+        />
+      )}
+
+      {showEditPost && (
+        <EditPostModal
+          post={showEditPost}
+          onClose={() => setShowEditPost(null)}
+          onUpdated={async () => {
+            if (profileTab === 'posts') {
+              const posts = await getUserPosts(uid)
+              setUserPosts(posts)
+            }
+            setShowEditPost(null)
+          }}
+        />
+      )}
     </div>
   )
 }
+

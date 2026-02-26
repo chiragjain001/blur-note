@@ -74,3 +74,15 @@ serviceAccountKey.json
 
 # dataconnect generated files
 .dataconnect
+
+# Next.js
+.next/
+out/
+build/
+.vercel/
+next-env.d.ts
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db

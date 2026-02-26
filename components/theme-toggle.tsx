@@ -16,10 +16,14 @@ export function ThemeToggle() {
 
   const toggleTheme = () => {
     const newTheme = isDark ? 'light' : 'dark'
+    const newIsDark = newTheme === 'dark'
     setIsDark(!isDark)
     localStorage.setItem('theme', newTheme)
-    document.documentElement.classList.toggle('dark', newTheme === 'dark')
-    document.body.classList.toggle('light', newTheme === 'light')
+    document.documentElement.classList.toggle('dark', newIsDark)
+    document.body.classList.toggle('light', !newIsDark)
+    
+    // Force re-render of components that depend on theme
+    window.dispatchEvent(new Event('themechange'))
   }
 
   if (!mounted) return null

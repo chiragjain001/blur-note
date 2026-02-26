@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { reportPost } from '@/app/actions/reports'
 import { toast } from 'sonner'
+import { showErrorToast } from '@/lib/client-error'
 
 interface ReportModalProps {
   postId: string
@@ -35,11 +36,11 @@ export function ReportModal({ postId, onClose }: ReportModalProps) {
 
     try {
       setLoading(true)
-      await reportPost(postId, user.uid, selectedReason)
+      await reportPost(postId, selectedReason)
       toast.success('Report submitted')
       onClose()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to submit report')
+      showErrorToast(error, 'Failed to submit report')
     } finally {
       setLoading(false)
     }

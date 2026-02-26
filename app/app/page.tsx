@@ -38,7 +38,6 @@ export default function AppPage() {
 
           try {
             await createUsername({
-              userId: user.uid,
               username: candidate,
             })
             setShowUsernameSetup(false)

@@ -1,11 +1,14 @@
 'use server'
 
 import { getAdminDb, isShadowbanned } from '@/lib/firebase-admin'
+import { requireAuth } from '@/lib/server-auth'
 import { Timestamp } from 'firebase-admin/firestore'
+import { limitByUser, RateLimitError } from '@/lib/rate-limit'
+import { CommentInputSchema, sanitizeHtml } from '@/lib/validation'
+import { AppError, isAppError } from '@/lib/app-error'
 
 interface AddCommentParams {
   postId: string
-  userId: string
   content: string
 }
 
@@ -62,61 +65,80 @@ function serializeCommentData(data: any): any {
  */
 export async function addComment(params: AddCommentParams) {
   try {
+    const { uid } = await requireAuth()
     const db = getAdminDb()
+    // 10 comments per minute per user
+    await limitByUser(uid, 'comment_post', 10, 60 * 1000)
+    
+    const { content } = CommentInputSchema.parse({ content: params.content })
+    const sanitizedContent = sanitizeHtml(content)
     
     // Check if user is shadowbanned
-    const shadowbanned = await isShadowbanned(params.userId)
+    const shadowbanned = await isShadowbanned(uid)
     if (shadowbanned) {
       // Shadowbanned users can comment, but comments won't appear to others
       // We'll handle this in the comments query
     }
     
     // Get user data for denormalization
-    const userDoc = await db.collection('users').doc(params.userId).get()
+    const userDoc = await db.collection('users').doc(uid).get()
     if (!userDoc.exists) {
-      throw new Error('User not found')
+      throw new AppError('NOT_FOUND', 'User not found')
     }
     
     const userData = userDoc.data()!
-    
-    // Validate content
-    if (!params.content?.trim()) {
-      throw new Error('Comment content is required')
-    }
     
     // Check if post exists
     const postRef = db.collection('posts').doc(params.postId)
     const postDoc = await postRef.get()
     
     if (!postDoc.exists) {
-      throw new Error('Post not found')
+      throw new AppError('NOT_FOUND', 'Post not found')
     }
     
     const postData = postDoc.data()!
     if (postData.status !== 'active') {
-      throw new Error('Cannot comment on this post')
+      throw new AppError('FORBIDDEN', 'You cannot comment on this post')
     }
     
-    // Add comment to subcollection
     const commentRef = postRef.collection('comments').doc()
-    await commentRef.set({
-      userId: params.userId,
-      authorUsername: userData.username || 'Anonymous',
-      authorAvatarUrl: userData.avatarUrl || '',
-      content: params.content.trim(),
-      createdAt: Timestamp.now(),
-      status: 'active',
-    })
-    
-    // Increment comment count
-    await postRef.update({
-      commentsCount: (postData.commentsCount || 0) + 1,
+
+    await db.runTransaction(async (tx) => {
+      const snapshot = await tx.get(postRef)
+      if (!snapshot.exists) {
+        throw new AppError('NOT_FOUND', 'Post not found')
+      }
+
+      const data = snapshot.data() || {}
+      const currentComments = data.commentsCount || 0
+
+      tx.set(commentRef, {
+        userId: uid,
+        authorUsername: userData.username || 'Anonymous',
+        authorAvatarUrl: userData.avatarUrl || '',
+        content: sanitizedContent,
+        createdAt: Timestamp.now(),
+        status: 'active',
+      })
+
+      tx.update(postRef, {
+        commentsCount: currentComments + 1,
+      })
     })
     
     return { success: true, commentId: commentRef.id }
   } catch (error: any) {
+    if (error instanceof RateLimitError) {
+      console.warn('[Server] Comment rate limit hit for user', error.message)
+      throw new AppError('RATE_LIMIT', 'You are commenting too quickly. Please wait and try again.')
+    }
+
+    if (isAppError(error)) {
+      throw error
+    }
+
     console.error('[Server] Error adding comment:', error)
-    throw error
+    throw new AppError('UNKNOWN', 'Something went wrong while adding your comment.')
   }
 }
 

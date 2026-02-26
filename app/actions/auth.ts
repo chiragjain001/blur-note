@@ -1,17 +1,19 @@
 'use server'
 
 import { getAdminDb } from '@/lib/firebase-admin'
+import { requireAuth } from '@/lib/server-auth'
+import { UsernameInputSchema, sanitizeHtml } from '@/lib/validation'
+import { AppError, isAppError } from '@/lib/app-error'
 import { Timestamp } from 'firebase-admin/firestore'
 
 interface CreateUsernameParams {
-  userId: string
   username: string
 }
 
 interface UpdateUserProfileParams {
-  userId: string
   avatar?: string
   bio?: string
+  coverGradient?: string
 }
 
 /**
@@ -20,41 +22,30 @@ interface UpdateUserProfileParams {
  */
 export async function createUsername(params: CreateUsernameParams) {
   try {
+    const { uid } = await requireAuth()
     const db = getAdminDb()
     
-    // Validate username
-    const usernameLower = params.username.toLowerCase().trim()
-    
-    if (!usernameLower || usernameLower.length < 3) {
-      throw new Error('Username must be at least 3 characters')
-    }
-    
-    if (usernameLower.length > 20) {
-      throw new Error('Username must be less than 20 characters')
-    }
-    
-    if (!/^[a-z0-9_]+$/.test(usernameLower)) {
-      throw new Error('Username can only contain letters, numbers, and underscores')
-    }
+    const { username } = UsernameInputSchema.parse({ username: params.username })
+    const usernameLower = username.toLowerCase().trim()
     
     // Check if username is already taken
     const usernameDoc = await db.collection('usernames').doc(usernameLower).get()
     
     if (usernameDoc.exists) {
       const existingUid = usernameDoc.data()!.uid
-      if (existingUid !== params.userId) {
-        throw new Error('Username is already taken')
+      if (existingUid !== uid) {
+        throw new AppError('CONFLICT', 'Username is already taken')
       }
       // Same user, allow update
     }
     
     // Get existing user data
-    const userDoc = await db.collection('users').doc(params.userId).get()
+    const userDoc = await db.collection('users').doc(uid).get()
     const existingUsername = userDoc.exists ? userDoc.data()?.usernameLower : null
     
     // Update usernames collection
     await db.collection('usernames').doc(usernameLower).set({
-      uid: params.userId,
+      uid,
     })
     
     // If user had a different username, remove old entry
@@ -64,14 +55,14 @@ export async function createUsername(params: CreateUsernameParams) {
     
     // Update user document
     const userData: any = {
-      username: params.username,
+      username,
       usernameLower,
       updatedAt: Timestamp.now(),
     }
     
     if (!userDoc.exists) {
       // Create new user document
-      userData.uid = params.userId
+      userData.uid = uid
       userData.role = 'user'
       userData.status = 'active'
       userData.avatarUrl = ''
@@ -79,17 +70,21 @@ export async function createUsername(params: CreateUsernameParams) {
       userData.createdAt = Timestamp.now()
     }
     
-    await db.collection('users').doc(params.userId).set(userData, { merge: true })
+    await db.collection('users').doc(uid).set(userData, { merge: true })
     
-    return { success: true, username: params.username }
+    return { success: true, username }
   } catch (error: any) {
+    if (isAppError(error)) {
+      throw error
+    }
     console.error('[Server] Error creating username:', error)
-    throw error
+    throw new AppError('UNKNOWN', 'Something went wrong while creating your username.')
   }
 }
 
 export async function updateUserProfile(params: UpdateUserProfileParams) {
   try {
+    const { uid } = await requireAuth()
     const db = getAdminDb()
 
     const updates: any = {
@@ -104,18 +99,23 @@ export async function updateUserProfile(params: UpdateUserProfileParams) {
       updates.bio = params.bio
     }
 
-    await db.collection('users').doc(params.userId).set(updates, { merge: true })
+    if (typeof params.coverGradient !== 'undefined') {
+      updates.coverGradient = params.coverGradient
+    }
 
-    const userDoc = await db.collection('users').doc(params.userId).get()
+    await db.collection('users').doc(uid).set(updates, { merge: true })
+
+    const userDoc = await db.collection('users').doc(uid).get()
     const data = userDoc.data() || {}
 
     const safeUser = {
-      uid: params.userId,
+      uid,
       username: data.username ?? '',
       usernameLower: data.usernameLower ?? '',
       bio: data.bio ?? '',
       avatar: data.avatar ?? '',
       avatarUrl: data.avatarUrl ?? '',
+      coverGradient: data.coverGradient ?? 'from-blue-500 via-indigo-500 to-purple-500',
       role: data.role ?? 'user',
       status: data.status ?? 'active',
     }
@@ -125,8 +125,11 @@ export async function updateUserProfile(params: UpdateUserProfileParams) {
       user: safeUser,
     }
   } catch (error: any) {
+    if (isAppError(error)) {
+      throw error
+    }
     console.error('[Server] Error updating user profile:', error)
-    throw error
+    throw new AppError('UNKNOWN', 'Something went wrong while updating your profile.')
   }
 }
 

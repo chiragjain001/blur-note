@@ -5,12 +5,12 @@ import { FirebaseStorage, getStorage } from 'firebase/storage'
 import { GoogleAuthProvider } from 'firebase/auth'
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyACBv7agfDq3yMs9qdnFQbsnkjmZjNzPWE",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "whisplyy.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "whisplyy",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "whisplyy.appspot.com",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "983464337272",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:983464337272:web:23bf268b6901c686b0328d",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 }
 
 let app: FirebaseApp | null = null
@@ -77,6 +77,8 @@ export const getStorageInstance = (): FirebaseStorage | null => {
   return storage
 }
 
+// Export storage for server-side use (requires admin SDK)
+// For client-side, use getStorageInstance()
 export { storage as firebaseStorage }
 
 // Lazy provider initialization

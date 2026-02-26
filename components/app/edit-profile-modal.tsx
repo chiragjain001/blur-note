@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createUsername, updateUserProfile } from '@/app/actions/auth'
 import { generateUsername } from '@/lib/username-generator'
 import { toast } from 'sonner'
+import { showErrorToast } from '@/lib/client-error'
 
 interface EditProfileModalProps {
   userId: string
@@ -11,6 +12,7 @@ interface EditProfileModalProps {
     username?: string
     bio?: string
     avatar?: string
+    coverGradient?: string
   }
   onClose: () => void
   onUpdated: (user: any) => void
@@ -20,10 +22,22 @@ export function EditProfileModal({ userId, initialProfile, onClose, onUpdated }:
   const [username, setUsername] = useState(initialProfile.username || '')
   const [avatar, setAvatar] = useState(initialProfile.avatar || '👻')
   const [bio, setBio] = useState(initialProfile.bio || '')
+  const [coverGradient, setCoverGradient] = useState(initialProfile.coverGradient || 'from-blue-500 via-indigo-500 to-purple-500')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const avatarOptions = ['👻', '🌙', '⭐', '🦊', '🐱', '🐺', '💫', '🖤']
+  
+  const gradientOptions = [
+    'from-blue-500 via-indigo-500 to-purple-500',
+    'from-pink-500 via-rose-500 to-yellow-500',
+    'from-emerald-400 via-teal-500 to-blue-500',
+    'from-orange-500 via-red-500 to-pink-500',
+    'from-gray-900 via-purple-900 to-violet-600',
+    'from-cyan-500 via-blue-500 to-indigo-500',
+    'from-purple-500 via-pink-500 to-red-500',
+    'from-green-400 via-emerald-500 to-teal-600',
+  ]
 
   const handleRandomUsername = () => {
     const generated = generateUsername()
@@ -58,15 +72,14 @@ export function EditProfileModal({ userId, initialProfile, onClose, onUpdated }:
 
       if (usernameChanged) {
         await createUsername({
-          userId,
           username: trimmedUsername,
         })
       }
 
       const result = await updateUserProfile({
-        userId,
         avatar,
         bio: bio.trim(),
+        coverGradient,
       })
 
       if (result?.success) {
@@ -75,9 +88,8 @@ export function EditProfileModal({ userId, initialProfile, onClose, onUpdated }:
         onClose()
       }
     } catch (err: any) {
-      console.error('[Profile] Error updating profile:', err)
-      setError(err.message || 'Failed to update profile')
-      toast.error(err.message || 'Failed to update profile')
+      setError(err?.message || 'Failed to update profile')
+      showErrorToast(err, 'Failed to update profile')
     } finally {
       setLoading(false)
     }
@@ -181,6 +193,25 @@ export function EditProfileModal({ userId, initialProfile, onClose, onUpdated }:
                 className="w-full bg-dark-secondary border border-dark-border rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary transition resize-none"
               />
               <p className="text-xs text-gray-400">{bio.length}/200 characters</p>
+            </div>
+
+            <div className="space-y-3 max-w-sm mx-auto">
+              <label className="block text-sm font-medium">Cover Background</label>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                {gradientOptions.map((gradient) => (
+                  <button
+                    key={gradient}
+                    type="button"
+                    onClick={() => setCoverGradient(gradient)}
+                    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex-shrink-0 border-2 transition ${
+                      coverGradient === gradient
+                        ? 'border-white scale-110 shadow-lg'
+                        : 'border-transparent hover:scale-105'
+                    }`}
+                    title={gradient}
+                  />
+                ))}
+              </div>
             </div>
 
             <div className="max-w-sm mx-auto">
