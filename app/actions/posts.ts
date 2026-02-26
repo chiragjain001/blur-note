@@ -168,7 +168,7 @@ export async function createPostWithAuth(params: CreatePostWithAuthParams) {
       id: '', // Will be set when creating document
       userId,
       genre: params.genre,
-      genreColor: genreColors[params.genre] || '#8b5cf6',
+      genreColor: genreColors[params.genre || ''] || '#8b5cf6',
       modulationType: params.type === 'voice' ? (params.modulationType || 'original') : null,
       audioUrl: null,
       text: params.type === 'text' ? sanitizedContent : null,
